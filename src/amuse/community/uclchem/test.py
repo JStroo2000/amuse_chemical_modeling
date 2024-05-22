@@ -1,6 +1,11 @@
 from interface import Uclchem
-species='H H2'
-dict = "{'outspecies': 2}"
+from amuse.datamodel import Particles
+from amuse.units import units
+#species='H H2'
+#dict = "{'outspecies': 2}"
 chem = Uclchem()
-test = chem.sim_cloud(outSpeciesIn=species, dictionary=dict)
-print(test)
+particles = Particles(1)
+particles.temperature = 20 | units.K
+chem.particles.add_particles(particles)
+chem.evolve_model()
+#print(test)
