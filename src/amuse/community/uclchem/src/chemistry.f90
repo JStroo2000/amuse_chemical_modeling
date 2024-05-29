@@ -105,6 +105,8 @@ CONTAINS
 
             abund(nhe,:) = fhe  
         ENDIF
+        print *, abund(neq,:)
+        print *, density
         abund(neq,:)=density  
         !Initial calculations of diffusion frequency for each species bound to grain
         !and other parameters required for diffusion reactions

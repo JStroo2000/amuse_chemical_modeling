@@ -248,6 +248,70 @@ CONTAINS
         np=left-1
     end function  
     
+    function evolve_chem_model() result(ret)
+        integer :: ret, i, iret
+        ret = 0
+        do i=1,nparticle
+            iret = evolve_particle(particles(i))
+            ret = min(i,iret)
+        enddo
+    end function
+
+    function evolve_particle(part) result(ret)
+        integer :: ret
+        type(particle_type) :: part
+        ret = 0
+        call simple_solver(ret)
+        part%abundances(1:SIZE(outIndx))=abund(outIndx,1)
+    end function
+
+    subroutine simple_solver(ret)
+        USE cloud_mod
+        character(len=20) :: dictionary
+        character(len=10) :: outSpeciesIn
+        integer :: ret
+        INCLUDE 'defaultparameters.f90'
+        outSpeciesIn='H H2'
+        dictionary = "{'outspecies': 2}"
+        !Read input parameters from the dictionary
+        CALL dictionaryParser(dictionary, outSpeciesIn,ret)
+        CALL coreInitializePhysics(ret)
+        CALL initializePhysics(ret)
+
+        dstep=1
+        currentTime=0.0
+        timeInYears=0.0
+        CALL initializeChemistry(readAbunds)
+        DO WHILE (((endAtFinalDensity) .and. (density(1) < finalDens)) .or. &
+            &((.not. endAtFinalDensity) .and. (timeInYears < finalTime)))
+          
+            currentTimeold=currentTime
+
+            !Each physics module has a subroutine to set the target time from the current time
+            CALL updateTargetTime
+            !loop over parcels, counting from centre out to edge of cloud
+            DO dstep=1,points
+                !reset time if this isn't first depth point
+                currentTime=currentTimeold
+                !update chemistry from currentTime to targetTime
+                CALL updateChemistry(ret)
+                IF (ret .lt. 0) THEN
+                    write(*,*) 'Error updating chemistry'
+                    RETURN
+                END IF
+
+                Call coreUpdatePhysics
+                CALL UpdatePhysics
+                !get time in years for output, currentTime is now equal to targetTime
+                timeInYears= currentTime/SECONDS_PER_YEAR
+
+                !Sublimation checks if Sublimation should happen this time step and does it
+                CALL sublimation(abund)
+
+            END DO
+        END DO
+    end subroutine simple_solver
+    
     SUBROUTINE test_cloud(dictionary, outSpeciesIn,abundance_out, successFlag)
         !Subroutine to call a cloud model, used to interface with python
         ! Loads cloud specific subroutines and send to solveAbundances

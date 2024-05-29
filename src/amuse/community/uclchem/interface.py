@@ -10,7 +10,7 @@ class UclchemInterface(CodeInterface, CommonCodeInterface):
             name_of_the_worker='uclchem_worker',
             **options
         )
-        
+
     @legacy_function
     def commit_particles():
         function = LegacyFunctionSpecification()
@@ -99,6 +99,12 @@ class UclchemInterface(CodeInterface, CommonCodeInterface):
         function.result_type = 'i'
         return function
 
+    @legacy_function
+    def evolve_model():
+        function = LegacyFunctionSpecification()
+        function.result_type='i'
+        return function
+    
 class Uclchem(CommonCode):
     def __init__(self, convert_nbody=None, **options):
         legacy_interface = UclchemInterface(**options)
@@ -180,6 +186,13 @@ class Uclchem(CommonCode):
             (
                 handler.INDEX,
             ),
+            (
+                handler.ERROR_CODE,
+            )
+        )
+        handler.add_method(
+            "evolve_model",
+            (),
             (
                 handler.ERROR_CODE,
             )
